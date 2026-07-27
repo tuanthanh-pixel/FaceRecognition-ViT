@@ -24,7 +24,7 @@ def get_parser():
     )
 
     parser.add_argument("--batch_size", type=int, default=8)
-    parser.add_argument("--identities_per_batch", type=int, default=4)
+    parser.add_argument("--identities_per_batch", type=int, default=8)
     parser.add_argument("--images_per_identity", type=int, default=4)
     parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument("--lr", type=float, default=3e-4)
