@@ -67,7 +67,18 @@ def get_parser():
         type=float,
         default=0.07,
     )
+    # Weighted Hard Negative
+    parser.add_argument(
+        "--use_weighted_negative",
+        type=bool,
+        default=True,
+    )
 
+    parser.add_argument(
+        "--hard_negative_gamma",
+        type=float,
+        default=2.0,
+    )
     parser.add_argument("--verification_pairs", type=int, default=10000)
 
     parser.add_argument(

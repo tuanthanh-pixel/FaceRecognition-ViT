@@ -91,6 +91,8 @@ def main():
     model = build_model(cfg).to(device)
     criterion = InfoNCELoss(
         temperature=cfg.temperature,
+        use_weighted_negative=cfg.use_weighted_negative,
+        hard_negative_gamma=cfg.hard_negative_gamma
     ).to(device)
     optimizer = torch.optim.AdamW(
         model.parameters(),
