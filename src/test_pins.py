@@ -137,7 +137,7 @@ def build_loader(cfg):
 
 checkpoint_path = (
     "/kaggle/input/datasets/tritechsic/"
-    "checkpoint4/"
+    "checkpoint6/"
     "sic_facevit_vggface2_semi_hard_best.pth"
 )
 
