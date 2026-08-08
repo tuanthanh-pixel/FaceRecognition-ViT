@@ -91,7 +91,6 @@ def main():
     model = build_model(cfg).to(device)
     criterion = InfoNCELoss(
         temperature=cfg.temperature,
-        use_weighted_negative=cfg.use_weighted_negative,
         hard_negative_gamma=cfg.hard_negative_gamma
     ).to(device)
     optimizer = torch.optim.AdamW(
@@ -116,6 +115,17 @@ def main():
     }
 
     for epoch in range(cfg.epochs):
+        if epoch < cfg.temperature_epoch1:
+
+            criterion.temperature = cfg.temperature_start
+
+        elif epoch < cfg.temperature_epoch2:
+
+            criterion.temperature = cfg.temperature_middle
+
+        else:
+
+            criterion.temperature = cfg.temperature_end
         epoch_start = time.perf_counter()
         train_metrics = train_one_epoch(
             model,

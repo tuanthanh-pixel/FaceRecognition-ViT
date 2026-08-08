@@ -67,17 +67,42 @@ def get_parser():
         type=float,
         default=0.07,
     )
-    # Weighted Hard Negative
+    # Temperature Scheduling
     parser.add_argument(
-        "--use_weighted_negative",
-        type=bool,
-        default=True,
+        "--temperature_start",
+        type=float,
+        default=0.10,
     )
+
+    parser.add_argument(
+        "--temperature_middle",
+        type=float,
+        default=0.08,
+    )
+
+    parser.add_argument(
+        "--temperature_end",
+        type=float,
+        default=0.06,
+    )
+
+    parser.add_argument(
+        "--temperature_epoch1",
+        type=int,
+        default=15,
+    )
+
+    parser.add_argument(
+        "--temperature_epoch2",
+        type=int,
+        default=30,
+    )
+    # Weighted Hard Negative
 
     parser.add_argument(
         "--hard_negative_gamma",
         type=float,
-        default=2.0,
+        default=1.2,
     )
     parser.add_argument("--verification_pairs", type=int, default=10000)
 
