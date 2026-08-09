@@ -5,11 +5,9 @@ import torch.nn.functional as F
 
 class InfoNCELoss(nn.Module):
 
-    def __init__(self, temperature=0.07,
-        hard_negative_gamma=1.2):
+    def __init__(self, temperature=0.07):
         super().__init__()
         self.temperature = temperature
-        self.hard_negative_gamma = hard_negative_gamma
 
     def forward(self, embeddings, labels):
 
@@ -32,38 +30,11 @@ class InfoNCELoss(nn.Module):
         )
 
         positive_mask = positive_mask - identity
-        negative_mask = 1 - positive_mask - identity
 
         logits_mask = 1 - identity
 
-        weights = torch.ones_like(similarity)
-
-        negative_similarity = similarity.detach()
-
-        negative_weight = (
-            1
-            +
-            self.hard_negative_gamma
-            *
-            torch.relu(negative_similarity)
-        )
-
-        weights = (
-            positive_mask
-            +
-            identity
-            +
-            negative_mask
-            *
-            negative_weight
-        )
-
         exp_similarity = (
-            torch.exp(similarity)
-            *
-            logits_mask
-            *
-            weights
+            torch.exp(similarity) * logits_mask
         )
 
         log_prob = similarity - torch.log(
