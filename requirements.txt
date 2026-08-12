@@ -15,6 +15,13 @@ torchvision==0.21.0+cu124
 Pillow
 matplotlib
 scikit-learn
+numpy
+opencv-python==4.10.0.84
+
+# Attendance web app
+fastapi
+uvicorn[standard]
+python-multipart
 
 # Regenerate the lesson report in tools/
 python-docx

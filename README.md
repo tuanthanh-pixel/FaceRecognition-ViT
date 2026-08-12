@@ -578,4 +578,50 @@ Trên máy train:
 git pull origin main
 ```
 
+## 21. Attendance web app MVP
+
+Phan app diem danh da duoc tach thanh cac file moi:
+
+- `src/attendance_core.py`: face detection, quality check, FaceViT embedding, gallery va session store.
+- `src/attendance_api.py`: FastAPI backend cho hoc sinh, dang ky khuon mat va diem danh.
+- `src/recognize_image.py`: script offline nhan dien tat ca khuon mat trong mot anh lop hoc.
+- `src/web/`: giao dien web don gian cho giao vien.
+
+Yeu cau checkpoint FaceViT nam tai:
+
+```powershell
+checkpoints/sic_facevit_vggface2_semi_hard_best.pth
+```
+
+Neu checkpoint o vi tri khac, dat bien moi truong:
+
+```powershell
+$env:FACEVIT_CHECKPOINT="C:\path\to\model_best.pth"
+```
+
+Chay web app:
+
+```powershell
+uvicorn attendance_api:app --app-dir src --reload
+```
+
+Mo trinh duyet tai:
+
+```text
+http://127.0.0.1:8000
+```
+
+Chay nhan dien offline:
+
+```powershell
+python src/recognize_image.py path\to\classroom.jpg
+```
+
+Luu y thiet ke:
+
+- Moi hoc sinh toi da 5 anh dang ky, khuyen nghi 5 anh ro mat.
+- Duoi 3 anh van cho phep luu nhung app canh bao do tin cay yeu.
+- Detector chi cat nhieu khuon mat tu anh lop; FaceViT van la model nhan dien chinh.
+- Ket qua co the la `unknown` neu mat qua mo, qua nho, gallery rong, vuot threshold, hoac top-1/top-2 qua gan nhau.
+
 Không commit dataset, checkpoint hoặc output lên GitHub.

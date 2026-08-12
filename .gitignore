@@ -16,6 +16,7 @@ htmlcov/
 src/dataset/
 data/
 datasets/
+attendance_data/
 archive.zip
 *.zip
 *.rar
@@ -42,4 +43,3 @@ runs/
 .DS_Store
 Thumbs.db
 desktop.ini
-
