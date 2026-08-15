@@ -44,6 +44,15 @@ def get_parser():
 
     parser.add_argument("--epochs", type=int, default=100)
 
+    parser.add_argument(
+        "--grad_accum",
+        type=int,
+        default=1,
+        help="Number of micro-batches to accumulate before "
+        "optimizer.step(). Raises the effective InfoNCE batch "
+        "when GPU memory cannot fit a larger P x K batch.",
+    )
+
     parser.add_argument("--early_stop", type=int, default=10)
     parser.add_argument("--early_stop_min_delta", type=float, default=1e-4)
 
@@ -87,13 +96,6 @@ def get_parser():
         "original and horizontal flip).",
     )
 
-    parser.add_argument(
-        "--align",
-        action="store_true",
-        help="Enable face alignment with MTCNN before embedding. "
-        "Requires the facenet-pytorch package.",
-    )
-
     cfg = parser.parse_args()
 
     if not 0.0 < cfg.validation_identity_ratio < 1.0:
@@ -113,6 +115,12 @@ def get_parser():
 
     if cfg.gallery_images_per_identity < 1:
         parser.error("gallery_images_per_identity phai lon hon hoac bang 1")
+
+    if cfg.early_stop < 1:
+        parser.error("early_stop phai lon hon hoac bang 1")
+
+    if cfg.grad_accum < 1:
+        parser.error("grad_accum phai lon hon hoac bang 1")
 
     if cfg.loss_type == "supcon":
         if cfg.temperature <= 0:

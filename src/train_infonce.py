@@ -24,27 +24,42 @@ def get_device():
     print(f"Using device: {device}")
     return device
 
-def train_one_epoch(model, data_loader, optimizer, criterion, device):
+def train_one_epoch(
+    model,
+    data_loader,
+    optimizer,
+    criterion,
+    device,
+    grad_accum=1,
+):
     model.train()
     total_loss = 0.0
     total_samples = 0
+    optimizer.zero_grad()
 
-    for images, labels in data_loader:
+    for step, (images, labels) in enumerate(data_loader):
         images = images.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
 
-        optimizer.zero_grad()
         embeddings = model(images)
         loss = criterion(
             embeddings,
             labels,
         )
-        loss.backward()
-        optimizer.step()
+        scaled_loss = loss / grad_accum
+        scaled_loss.backward()
+
+        if (step + 1) % grad_accum == 0:
+            optimizer.step()
+            optimizer.zero_grad()
 
         batch_size = images.size(0)
         total_loss += loss.item() * batch_size
         total_samples += batch_size
+
+    if len(data_loader) % grad_accum != 0:
+        optimizer.step()
+        optimizer.zero_grad()
 
     return {
         "loss": total_loss / total_samples,
@@ -98,6 +113,14 @@ def main():
         weight_decay=cfg.weight_decay,
     )
 
+    micro_batch = cfg.identities_per_batch * cfg.images_per_identity
+    effective_batch = micro_batch * cfg.grad_accum
+    print(
+        f"Micro-batch: {micro_batch} images "
+        f"| gradient accumulation: {cfg.grad_accum} "
+        f"| effective InfoNCE batch: {effective_batch}"
+    )
+
     os.makedirs("checkpoints", exist_ok=True)
     best_model_path = os.path.join(
         "checkpoints",
@@ -121,6 +144,7 @@ def main():
             optimizer,
             criterion,
             device,
+            grad_accum=cfg.grad_accum,
         )
         val_metrics = evaluate(
             model,
