@@ -168,6 +168,20 @@ outputs/sic_facevit_vggface2_semi_hard/
 
 Không cần đợi đủ 100 epoch. Early Stopping tự dừng khi Validation Loss không cải thiện ít nhất `0.0001` trong 10 epoch liên tiếp.
 
+### Tiếp tục huấn luyện từ checkpoint
+
+Khi chạy trên Kaggle hết giới hạn 12 giờ, có thể resume tiếp từ checkpoint bằng `--resume`:
+
+```powershell
+python train_infonce.py --resume /kaggle/input/tên-dataset/infonce_batch16_best.pth --experiment_name infonce_batch16_r2 --epochs 100
+```
+
+- Kiến trúc model, optimizer và dataset config được lấy từ checkpoint; chỉ `--experiment_name`, `--epochs`, early stopping và `--grad_accum` lấy từ dòng lệnh.
+- `--epochs` là tổng số epoch mục tiêu (vẫn đặt 100); chương trình chạy tiếp từ epoch đã đạt.
+- Bộ đếm epoch của `P×K sampler` được đặt lại khớp để tiếp tục pattern lấy mẫu.
+- `history` (train/val loss, epoch time) được lưu kèm trong checkpoint từ giờ, nên biểu đồ vẫn liền mạch khi resume.
+- Nên đặt tên `--experiment_name` mới (ví dụ `infonce_batch16_r2`) để không đè checkpoint/output cũ.
+
 ## 7. Cấu hình chính
 
 | Tham số | Mặc định | Ý nghĩa |

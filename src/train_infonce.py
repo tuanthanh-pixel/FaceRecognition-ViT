@@ -1,3 +1,4 @@
+import argparse
 import os
 import random
 import time
@@ -98,20 +99,74 @@ def format_time(seconds):
 
 
 def main():
-    cfg = get_parser()
-    set_seed(cfg.seed)
+    cli_cfg = get_parser()
+    set_seed(cli_cfg.seed)
     device = get_device()
-    loaders, class_names, split_class_names = build_dataloaders(cfg)
 
-    model = build_model(cfg).to(device)
-    criterion = InfoNCELoss(
-        temperature=cfg.temperature,
-    ).to(device)
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=cfg.lr,
-        weight_decay=cfg.weight_decay,
-    )
+    if cli_cfg.resume:
+        checkpoint = torch.load(
+            cli_cfg.resume,
+            map_location=device,
+            weights_only=True,
+        )
+        cfg = argparse.Namespace(**checkpoint["config"])
+        cfg.experiment_name = cli_cfg.experiment_name
+        cfg.epochs = cli_cfg.epochs
+        cfg.early_stop = cli_cfg.early_stop
+        cfg.early_stop_min_delta = cli_cfg.early_stop_min_delta
+        cfg.grad_accum = cli_cfg.grad_accum
+
+        loaders, class_names, split_class_names = build_dataloaders(cfg)
+        model = build_model(cfg).to(device)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        criterion = InfoNCELoss(
+            temperature=cfg.temperature,
+        ).to(device)
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=cfg.lr,
+            weight_decay=cfg.weight_decay,
+        )
+        optimizer.load_state_dict(
+            checkpoint["optimizer_state_dict"]
+        )
+
+        start_epoch = checkpoint["epoch"]
+        best_val_loss = checkpoint["val_loss"]
+        history = checkpoint.get(
+            "history",
+            {
+                "train_loss": [],
+                "val_loss": [],
+                "epoch_time": [],
+            },
+        )
+
+        loaders["train_triplet"].batch_sampler.epoch = start_epoch
+        print(
+            f"Resumed from {cli_cfg.resume}: "
+            f"epoch {start_epoch}, val_loss {best_val_loss:.4f}. "
+            f"Continuing on experiment '{cfg.experiment_name}'."
+        )
+    else:
+        cfg = cli_cfg
+        loaders, class_names, split_class_names = build_dataloaders(cfg)
+        model = build_model(cfg).to(device)
+        criterion = InfoNCELoss(
+            temperature=cfg.temperature,
+        ).to(device)
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=cfg.lr,
+            weight_decay=cfg.weight_decay,
+        )
+        start_epoch = 0
+        best_val_loss = float("inf")
+        history = {
+            "train_loss": [],
+            "val_loss": [],
+            "epoch_time": [],
+        }
 
     micro_batch = cfg.identities_per_batch * cfg.images_per_identity
     effective_batch = micro_batch * cfg.grad_accum
@@ -126,17 +181,11 @@ def main():
         "checkpoints",
         f"{cfg.experiment_name}_best.pth",
     )
-    best_val_loss = float("inf")
     best_epoch = 0
     epochs_without_improvement = 0
     training_start = time.perf_counter()
-    history = {
-        "train_loss": [],
-        "val_loss": [],
-        "epoch_time": [],
-    }
 
-    for epoch in range(cfg.epochs):
+    for epoch in range(start_epoch, cfg.epochs):
         epoch_start = time.perf_counter()
         train_metrics = train_one_epoch(
             model,
@@ -181,6 +230,7 @@ def main():
                     "config": vars(cfg),
                     "class_names": class_names,
                     "split_class_names": split_class_names,
+                    "history": history,
                 },
                 best_model_path,
             )

@@ -58,6 +58,16 @@ def get_parser():
 
     parser.add_argument("--seed", type=int, default=42)
 
+    parser.add_argument(
+        "--resume",
+        type=str,
+        default=None,
+        help="Path to a checkpoint .pth to resume training from. "
+        "Model architecture, optimizer and dataset config are taken "
+        "from the checkpoint; only epochs / early stopping / "
+        "experiment_name / grad_accum come from the CLI.",
+    )
+
     parser.add_argument("--patch_size", type=int, default=16)
     parser.add_argument("--embed_dim", type=int, default=192)
     parser.add_argument("--depth", type=int, default=12)
