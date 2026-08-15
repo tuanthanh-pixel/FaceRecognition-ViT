@@ -25,7 +25,7 @@ def get_device():
 
 
 @torch.no_grad()
-def extract_embeddings(model, data_loader, device):
+def extract_embeddings(model, data_loader, device, tta=False):
     model.eval()
     all_embeddings = []
     all_labels = []
@@ -33,6 +33,14 @@ def extract_embeddings(model, data_loader, device):
     for images, labels in data_loader:
         images = images.to(device, non_blocking=True)
         embeddings = model(images)
+        if tta:
+            flipped_embeddings = model(torch.flip(images, dims=[3]))
+            embeddings = (embeddings + flipped_embeddings) / 2.0
+            embeddings = torch.nn.functional.normalize(
+                embeddings,
+                p=2,
+                dim=1,
+            )
         all_embeddings.append(embeddings.cpu())
         all_labels.append(labels)
 
@@ -141,6 +149,7 @@ def main():
         model,
         loaders["test_images"],
         device,
+        tta=cli_cfg.tta,
     )
     pair_labels, pair_distances = create_verification_pairs(
         embeddings,
@@ -228,6 +237,7 @@ def main():
 
     print(f"Loaded checkpoint: {checkpoint_path}")
     print(f"Best epoch: {checkpoint['epoch']}")
+    print(f"Test-time augmentation: {'enabled' if cli_cfg.tta else 'disabled'}")
     print(f"Test identities: {len(set(labels.tolist()))}")
     print(f"Test images: {len(labels)}")
     print(

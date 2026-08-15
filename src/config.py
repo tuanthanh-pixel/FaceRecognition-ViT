@@ -76,6 +76,13 @@ def get_parser():
         default=5,
     )
 
+    parser.add_argument(
+        "--tta",
+        action="store_true",
+        help="Enable test-time augmentation: "
+        "average embeddings over original and horizontal flip.",
+    )
+
     cfg = parser.parse_args()
 
     if not 0.0 < cfg.validation_identity_ratio < 1.0:

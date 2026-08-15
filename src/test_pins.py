@@ -147,7 +147,7 @@ checkpoint_path = (
 # ======================================================
 
 @torch.no_grad()
-def extract_embeddings(model, loader, device):
+def extract_embeddings(model, loader, device, tta=False):
 
     model.eval()
 
@@ -162,6 +162,22 @@ def extract_embeddings(model, loader, device):
         )
 
         embeddings = model(images)
+
+        if tta:
+            flipped_embeddings = model(
+                torch.flip(
+                    images,
+                    dims=[3],
+                )
+            )
+            embeddings = (
+                embeddings + flipped_embeddings
+            ) / 2.0
+            embeddings = torch.nn.functional.normalize(
+                embeddings,
+                p=2,
+                dim=1,
+            )
 
         all_embeddings.append(
             embeddings.cpu()
@@ -340,10 +356,16 @@ def main():
         f"Loaded checkpoint: {checkpoint_path}"
     )
 
+    print(
+        f"Test-time augmentation: "
+        f"{'enabled' if cli_cfg.tta else 'disabled'}"
+    )
+
     embeddings, labels = extract_embeddings(
         model,
         loader,
         device,
+        tta=cli_cfg.tta,
     )
 
     pair_labels, pair_distances = (
