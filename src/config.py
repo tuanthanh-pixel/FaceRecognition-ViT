@@ -77,10 +77,21 @@ def get_parser():
     )
 
     parser.add_argument(
-        "--tta",
+        "--no-tta",
+        dest="tta",
+        action="store_false",
+        default=True,
+        help="Disable test-time augmentation: "
+        "use embeddings from the original image only "
+        "(by default embeddings are averaged over "
+        "original and horizontal flip).",
+    )
+
+    parser.add_argument(
+        "--align",
         action="store_true",
-        help="Enable test-time augmentation: "
-        "average embeddings over original and horizontal flip.",
+        help="Enable face alignment with MTCNN before embedding. "
+        "Requires the facenet-pytorch package.",
     )
 
     cfg = parser.parse_args()

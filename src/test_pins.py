@@ -45,11 +45,12 @@ IMAGE_EXTENSIONS = {
 
 class PinsDataset(Dataset):
 
-    def __init__(self, root, image_size):
+    def __init__(self, root, image_size, aligner=None):
 
         self.image_paths = []
         self.labels = []
         self.class_names = []
+        self.aligner = aligner
 
         transform = transforms.Compose(
             [
@@ -110,6 +111,9 @@ class PinsDataset(Dataset):
             self.image_paths[index]
         ).convert("RGB")
 
+        if self.aligner is not None:
+            image = self.aligner.align(image)
+
         image = self.transform(image)
 
         return image, self.labels[index]
@@ -120,6 +124,7 @@ def build_loader(cfg):
     dataset = PinsDataset(
         "/kaggle/input/datasets/hereisburak/pins-face-recognition/105_classes_pins_dataset",
         cfg.image_size,
+        aligner=cfg.aligner,
     )
 
     loader = DataLoader(
@@ -344,6 +349,24 @@ def main():
     model_cfg.batch_size = cli_cfg.batch_size
     model_cfg.num_workers = cli_cfg.num_workers
 
+    aligner = None
+    if cli_cfg.align:
+        from align import FaceAligner
+
+        aligner = FaceAligner(
+            image_size=model_cfg.image_size,
+            device=device,
+        )
+        if not aligner.is_enabled:
+            import warnings
+
+            warnings.warn(
+                "Face aligner could not be loaded; "
+                "falling back to no alignment."
+            )
+            aligner = None
+    model_cfg.aligner = aligner
+
     loader, dataset = build_loader(model_cfg)
 
     model = build_model(model_cfg).to(device)
@@ -359,6 +382,11 @@ def main():
     print(
         f"Test-time augmentation: "
         f"{'enabled' if cli_cfg.tta else 'disabled'}"
+    )
+
+    print(
+        f"Face alignment: "
+        f"{'enabled' if aligner is not None else 'disabled'}"
     )
 
     embeddings, labels = extract_embeddings(

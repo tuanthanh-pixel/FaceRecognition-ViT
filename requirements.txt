@@ -17,6 +17,8 @@ matplotlib
 scikit-learn
 numpy
 opencv-python==4.10.0.84
+# Only needed for --align in test_pins.py (face alignment via MTCNN).
+facenet-pytorch
 
 # Attendance web app
 fastapi
