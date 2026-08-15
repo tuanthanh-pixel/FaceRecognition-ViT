@@ -334,6 +334,16 @@ def main():
 
     cli_cfg = get_parser()
 
+    # Avoid "Cannot re-initialize CUDA in forked subprocess" on Linux/Kaggle
+    # when DataLoader workers are started after the model loaded on GPU.
+    try:
+        import multiprocessing
+
+        if not multiprocessing.get_start_method(allow_none=True):
+            multiprocessing.set_start_method("spawn", force=True)
+    except Exception:
+        pass
+
     device = get_device()
 
     checkpoint = torch.load(
@@ -353,9 +363,11 @@ def main():
     if cli_cfg.align:
         from align import FaceAligner
 
+        # MTCNN runs on CPU inside DataLoader workers so no CUDA call happens
+        # in forked/spawned subprocesses.
         aligner = FaceAligner(
             image_size=model_cfg.image_size,
-            device=device,
+            device="cpu",
         )
         if not aligner.is_enabled:
             import warnings
